@@ -26,8 +26,13 @@ class RichSnippetArchives {
         add_action('wp_head', array($this, 'output_schema'));
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_init', array($this, 'register_settings'));
+        add_action('admin_enqueue_scripts', array($this, 'admin_styles'));
 
         register_activation_hook(__FILE__, array($this, 'activate'));
+    }
+
+    public function admin_styles() {
+        wp_enqueue_style('rich-snippet-admin', $this->plugin_url . 'admin.css');
     }
 
     public function init() {
@@ -86,9 +91,15 @@ class RichSnippetArchives {
         <div class="wrap">
             <h1><?php _e('Configurazione Rich Snippet Pro', 'rich-snippet-archives'); ?></h1>
 
+            <h2 class="nav-tab-wrapper">
+                <a href="?page=rich-snippet-archives&tab=archive" class="nav-tab <?php echo !isset($_GET['tab']) || $_GET['tab'] === 'archive' ? 'nav-tab-active' : ''; ?>"><?php _e('Archive Settings', 'rich-snippet-archives'); ?></a>
+                <a href="?page=rich-snippet-archives&tab=single" class="nav-tab <?php echo isset($_GET['tab']) && $_GET['tab'] === 'single' ? 'nav-tab-active' : ''; ?>"><?php _e('Single Product Settings', 'rich-snippet-archives'); ?></a>
+            </h2>
+
             <form method="post" action="options.php">
                 <?php settings_fields('rich_snippet_settings'); ?>
 
+                <?php if (!isset($_GET['tab']) || $_GET['tab'] === 'archive'): ?>
                 <table class="form-table">
                     <tr>
                         <th scope="row"><?php _e('Nome Brand/Azienda', 'rich-snippet-archives'); ?></th>
@@ -184,6 +195,49 @@ class RichSnippetArchives {
                         </td>
                     </tr>
                 </table>
+                <?php else: ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><?php _e('Enable Single Product Schema', 'rich-snippet-archives'); ?></th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="rich_snippet_settings[single_product_enabled]" value="1" <?php checked(isset($settings['single_product_enabled']) && $settings['single_product_enabled'] == 1); ?> />
+                                <?php _e('Enable', 'rich-snippet-archives'); ?>
+                            </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><?php _e('Default Shipping', 'rich-snippet-archives'); ?></th>
+                        <td>
+                            <label>
+                                <?php _e('Shipping Cost (€):', 'rich-snippet-archives'); ?>
+                                <input type="number" step="0.01" name="rich_snippet_settings[single_default_shipping][cost]"
+                                       value="<?php echo esc_attr($settings['single_default_shipping']['cost'] ?? '4.90'); ?>"
+                                       class="small-text" />
+                            </label><br/>
+                            <label>
+                                <?php _e('Handling Days (min-max):', 'rich-snippet-archives'); ?>
+                                <input type="number" name="rich_snippet_settings[single_default_shipping][handling_days][0]"
+                                       value="<?php echo esc_attr($settings['single_default_shipping']['handling_days'][0] ?? '1'); ?>"
+                                       class="small-text" /> -
+                                <input type="number" name="rich_snippet_settings[single_default_shipping][handling_days][1]"
+                                       value="<?php echo esc_attr($settings['single_default_shipping']['handling_days'][1] ?? '2'); ?>"
+                                       class="small-text" />
+                            </label><br/>
+                            <label>
+                                <?php _e('Transit Days (min-max):', 'rich-snippet-archives'); ?>
+                                <input type="number" name="rich_snippet_settings[single_default_shipping][transit_days][0]"
+                                       value="<?php echo esc_attr($settings['single_default_shipping']['transit_days'][0] ?? '2'); ?>"
+                                       class="small-text" /> -
+                                <input type="number" name="rich_snippet_settings[single_default_shipping][transit_days][1]"
+                                       value="<?php echo esc_attr($settings['single_default_shipping']['transit_days'][1] ?? '5'); ?>"
+                                       class="small-text" />
+                            </label>
+                            <p class="description"><?php _e('Default shipping information for single product rich snippets.', 'rich-snippet-archives'); ?></p>
+                        </td>
+                    </tr>
+                </table>
+                <?php endif; ?>
 
                 <?php submit_button(); ?>
             </form>
@@ -670,10 +724,10 @@ class RichSnippetArchives {
 
             // Informazioni spedizione
             $shipping_info = get_post_meta($product_id, '_shipping_info', true);
-            if ($shipping_info || !empty($settings['default_shipping'])) {
-                $shipping_cost = $shipping_info['cost'] ?? $settings['default_shipping']['cost'] ?? '4.90';
-                $handling_days = $shipping_info['handling_days'] ?? $settings['default_shipping']['handling_days'] ?? array(1, 2);
-                $transit_days = $shipping_info['transit_days'] ?? $settings['default_shipping']['transit_days'] ?? array(2, 5);
+            if ($shipping_info || !empty($settings['single_default_shipping'])) {
+                $shipping_cost = $shipping_info['cost'] ?? $settings['single_default_shipping']['cost'] ?? '4.90';
+                $handling_days = $shipping_info['handling_days'] ?? $settings['single_default_shipping']['handling_days'] ?? array(1, 2);
+                $transit_days = $shipping_info['transit_days'] ?? $settings['single_default_shipping']['transit_days'] ?? array(2, 5);
 
                 $offer["shippingDetails"] = array(
                     "@type" => "OfferShippingDetails",

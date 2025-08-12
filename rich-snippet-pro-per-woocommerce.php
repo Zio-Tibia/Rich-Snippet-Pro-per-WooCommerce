@@ -343,9 +343,11 @@ class RichSnippetArchives {
 
         $schema["@graph"][] = $itemList;
 
-        $breadcrumb_schema = $this->generate_breadcrumb_schema();
-        if ($breadcrumb_schema) {
-            $schema["@graph"][] = $breadcrumb_schema;
+        if (!defined('RANK_MATH_VERSION')) {
+            $breadcrumb_schema = $this->generate_breadcrumb_schema();
+            if ($breadcrumb_schema) {
+                $schema["@graph"][] = $breadcrumb_schema;
+            }
         }
 
         $organization_schema = $this->generate_organization_schema($settings);
@@ -903,9 +905,11 @@ class RichSnippetArchives {
         $schema["@graph"][] = $product_schema;
 
         // Breadcrumb per prodotto
-        $breadcrumb_schema = $this->generate_product_breadcrumb_schema($product_id);
-        if ($breadcrumb_schema) {
-            $schema["@graph"][] = $breadcrumb_schema;
+        if ( ! defined( 'RANK_MATH_VERSION' ) ) {
+            $breadcrumb_schema = $this->generate_product_breadcrumb_schema($product_id);
+            if ($breadcrumb_schema) {
+                $schema["@graph"][] = $breadcrumb_schema;
+            }
         }
 
         // Organization Schema
